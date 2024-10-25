@@ -39,7 +39,11 @@ func (self *Router) On(pattern string, conn protocol.Connection) *Router {
 
 	subs = append(subs, conn)
 	self.items[pattern] = subs
-	self.exprs[pattern] = regexp.MustCompile(pattern)
+	self.exprs[pattern] = nil
+
+	if expr, err := regexp.Compile(pattern); err == nil {
+		self.exprs[pattern] = expr
+	}
 
 	return self
 }
@@ -49,18 +53,24 @@ func (self *Router) Push(packet *protocol.Publish) {
 	defer self.mu.RUnlock()
 
 	for pattern, expr := range self.exprs {
-		if expr.MatchString(packet.Topic) {
-			subs, exists := self.items[pattern]
-
-			if !exists {
-				subs = []protocol.Connection{}
-			}
-
-			for _, conn := range subs {
-				conn.Write(packet)
-			}
-
-			self.items[pattern] = subs
+		if expr == nil && pattern != packet.Topic {
+			continue
 		}
+
+		if expr != nil && !expr.MatchString(packet.Topic) {
+			continue
+		}
+
+		subs, exists := self.items[pattern]
+
+		if !exists {
+			subs = []protocol.Connection{}
+		}
+
+		for _, conn := range subs {
+			conn.Write(packet)
+		}
+
+		self.items[pattern] = subs
 	}
 }

@@ -2,11 +2,11 @@ import mqtt from 'mqtt';
 import { faker } from '@faker-js/faker';
 
 (async () => {
-  const client = mqtt.connect('mqtt://localhost:9876');
+  const client = mqtt.connect('mqtt://localhost');
 
   client.on('connect', () => {
     console.log('connected...');
-    client.subscribe('^[a-zA-Z0-9_]*$');
+    client.subscribe('test');
 
     setInterval(() => {
       client.publish('test', faker.internet.email());
