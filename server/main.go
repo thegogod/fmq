@@ -18,7 +18,7 @@ func main() {
 	PublishQueue = make(chan PublishEvent)
 	SubscribeQueue = make(chan SubscribeEvent)
 	router := NewRouter()
-	port, err := strconv.Atoi(env.GetOrDefault("FMQ_PORT", "9876"))
+	port, err := strconv.Atoi(env.GetOrDefault("FMQ_PORT", "1883"))
 
 	if err != nil {
 		panic(fmt.Errorf("`FMQ_PORT` must be an integer"))
