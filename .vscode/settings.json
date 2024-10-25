@@ -1,0 +1,13 @@
+{
+  "workbench.startupEditor": "none",
+  "rest-client.enableTelemetry": false,
+  "rest-client.defaultHeaders": {
+    "User-Agent": "vscode-restclient",
+    "Content-Type": "application/json"
+  },
+  "rest-client.environmentVariables": {
+    "local": { }
+  },
+  "typescript.preferences.quoteStyle": "single",
+  "scss.lint.unknownAtRules": "ignore"
+}
