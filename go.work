@@ -4,5 +4,6 @@ use ./cli
 use ./common
 use ./logger
 use ./server
+use ./async
 
 use ./plugins/mqtt

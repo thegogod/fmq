@@ -7,17 +7,24 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/thegogod/fmq/async"
 	"github.com/thegogod/fmq/common/env"
 	"github.com/thegogod/fmq/common/protocol"
 	"github.com/thegogod/fmq/common/slices"
 	"github.com/thegogod/fmq/logger"
 )
 
+type Message struct {
+	ID      uint16 `json:"id"`
+	Payload []byte `json:"payload"`
+}
+
+var topics = map[string]chan Message{}
+var tasks = async.New(50)
+var router = NewRouter()
+
 func main() {
 	log := logger.New("")
-	PublishQueue = make(chan PublishEvent)
-	SubscribeQueue = make(chan SubscribeEvent)
-	router := NewRouter()
 	port, err := strconv.Atoi(env.GetOrDefault("FMQ_PORT", "1883"))
 
 	if err != nil {
@@ -49,8 +56,7 @@ func main() {
 	}
 
 	log.Info(fmt.Sprintf("listening on port %d...", port))
-	go publish(router)
-	go subscribe(router)
+	tasks.Start()
 
 	for {
 		conn, err := listener.Accept()
@@ -60,19 +66,5 @@ func main() {
 		}
 
 		go onConnection(protocols, conn)
-	}
-}
-
-func publish(router *Router) {
-	for event := range PublishQueue {
-		router.Push(event.Packet)
-	}
-}
-
-func subscribe(router *Router) {
-	for event := range SubscribeQueue {
-		for _, topic := range event.Packet.Topics {
-			router.On(topic, event.Conn)
-		}
 	}
 }

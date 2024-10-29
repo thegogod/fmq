@@ -4,6 +4,9 @@ import (
 	"regexp"
 	"slices"
 	"sync"
+	"time"
+
+	"math/rand"
 
 	"github.com/thegogod/fmq/common/protocol"
 )
@@ -48,16 +51,16 @@ func (self *Router) On(pattern string, conn protocol.Connection) *Router {
 	return self
 }
 
-func (self *Router) Push(packet *protocol.Publish) {
+func (self *Router) Next(topic string) protocol.Connection {
 	self.mu.RLock()
 	defer self.mu.RUnlock()
 
 	for pattern, expr := range self.exprs {
-		if expr == nil && pattern != packet.Topic {
+		if expr == nil && pattern != topic {
 			continue
 		}
 
-		if expr != nil && !expr.MatchString(packet.Topic) {
+		if expr != nil && !expr.MatchString(topic) {
 			continue
 		}
 
@@ -67,10 +70,13 @@ func (self *Router) Push(packet *protocol.Publish) {
 			subs = []protocol.Connection{}
 		}
 
-		for _, conn := range subs {
-			conn.Write(packet)
+		if len(subs) > 0 {
+			r := rand.New(rand.NewSource(time.Now().Unix()))
+			return subs[r.Intn(len(subs))]
 		}
 
 		self.items[pattern] = subs
 	}
+
+	return nil
 }

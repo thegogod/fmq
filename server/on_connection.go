@@ -44,8 +44,6 @@ func onConnection(protocols []protocol.Protocol, conn net.Conn) {
 				return
 			}
 
-			log.Debug(packet.String())
-
 			switch packet := packet.(type) {
 			case *protocol.Ping:
 				err = c.Write(&protocol.PingAck{})
@@ -55,12 +53,10 @@ func onConnection(protocols []protocol.Protocol, conn net.Conn) {
 			case *protocol.Disconnect:
 				return
 			case *protocol.Publish:
-				PublishQueue <- PublishEvent{packet}
-				err = c.Write(&protocol.PublishAck{ID: packet.ID})
+				tasks.Push(onPublish(packet, c))
 				break
 			case *protocol.Subscribe:
-				SubscribeQueue <- SubscribeEvent{packet, c}
-				err = c.Write(&protocol.SubscribeAck{ID: packet.ID})
+				tasks.Push(onSubscribe(packet, c))
 				break
 			case *protocol.UnSubscribe:
 				err = c.Write(&protocol.UnSubscribeAck{ID: packet.ID})
@@ -72,5 +68,28 @@ func onConnection(protocols []protocol.Protocol, conn net.Conn) {
 				return
 			}
 		}
+	}
+}
+
+func onPublish(packet *protocol.Publish, conn protocol.Connection) func() error {
+	return func() error {
+		next := router.Next(packet.Topic)
+
+		if next != nil {
+			next.Write(packet)
+			return conn.Write(&protocol.PublishAck{ID: packet.ID})
+		}
+
+		return nil
+	}
+}
+
+func onSubscribe(packet *protocol.Subscribe, conn protocol.Connection) func() error {
+	return func() error {
+		for _, topic := range packet.Topics {
+			router.On(topic, conn)
+		}
+
+		return conn.Write(&protocol.SubscribeAck{ID: packet.ID})
 	}
 }
