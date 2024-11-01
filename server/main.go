@@ -2,19 +2,22 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/thegogod/fmq/async"
 	"github.com/thegogod/fmq/common/env"
 	"github.com/thegogod/fmq/common/protocol"
 	"github.com/thegogod/fmq/logger"
 )
 
-var publish = make(chan Event[*protocol.Publish])
-var subscribe = make(chan Event[*protocol.Subscribe])
-var unSubscribe = make(chan Event[*protocol.UnSubscribe])
+var publish = make(chan Event[*protocol.Publish], 1000)
+var subscribe = make(chan Event[*protocol.Subscribe], 1000)
+var unSubscribe = make(chan Event[*protocol.UnSubscribe], 1000)
 
 func main() {
 	log := logger.New("main")
@@ -45,7 +48,12 @@ func main() {
 
 	log.Info(fmt.Sprintf("listening on port %d...", port))
 	topics := newTopics()
-	clients := map[string]*Client{}
+	workers := async.New(20)
+	workers.Start()
+
+	for i := 0; i < workers.Count(); i++ {
+		workers.Push(listen(log, topics))
+	}
 
 	for {
 		conn, err := listener.Accept()
@@ -61,30 +69,31 @@ func main() {
 			continue
 		}
 
-		client := NewClient(
-			c,
-			func() {
-				delete(clients, c.ID())
-			},
-			func(event Event[*protocol.Publish]) {
-				topics.Publish(event.Packet.Topic, event.Packet)
-			},
-			func(event Event[*protocol.Subscribe]) {
-				for _, topic := range event.Packet.Topics {
-					topics.Subscribe(topic, c)
-				}
-			},
-			func(event Event[*protocol.UnSubscribe]) {
-				for _, topic := range event.Packet.Topics {
-					topics.UnSubscribe(topic, c.ID())
-				}
-			},
-		)
-
-		clients[client.ID()] = client
+		client := NewClient(c)
 		go client.Listen(
 			os.Getenv("FMQ_USERNAME"),
 			os.Getenv("FMQ_PASSWORD"),
 		)
+	}
+}
+
+func listen(_ *slog.Logger, topics *Topics) func() error {
+	return func() error {
+		for {
+			select {
+			case event := <-publish:
+				topics.Publish(event.Packet.Topic, event.Packet)
+			case event := <-subscribe:
+				for _, topic := range event.Packet.Topics {
+					topics.Subscribe(topic, event.From)
+				}
+			case event := <-unSubscribe:
+				for _, topic := range event.Packet.Topics {
+					topics.UnSubscribe(topic, event.From.ID())
+				}
+			default:
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
 	}
 }

@@ -18,7 +18,7 @@ type Topic struct {
 func newTopic() *Topic {
 	self := &Topic{
 		index:     -1,
-		queue:     make(Queue[*protocol.Publish], 100),
+		queue:     make(Queue[*protocol.Publish], 10000),
 		listeners: []protocol.Connection{},
 	}
 
@@ -96,6 +96,7 @@ func (self *Topic) listen() {
 
 			if !exists {
 				self.Publish(packet)
+				time.Sleep(100 * time.Millisecond)
 				break
 			}
 

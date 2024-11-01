@@ -24,13 +24,17 @@ func (self *Topics) Count() int {
 }
 
 func (self *Topics) Subscribe(key string, conn protocol.Connection) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+	self.mu.RLock()
+	defer self.mu.RUnlock()
 	topic, exists := self.items[key]
 
 	if !exists {
 		topic = newTopic()
-		self.items[key] = topic
+		go func(topic *Topic) {
+			self.mu.Lock()
+			defer self.mu.Unlock()
+			self.items[key] = topic
+		}(topic)
 	}
 
 	topic.Subscribe(conn)
@@ -54,10 +58,12 @@ func (self *Topics) Publish(key string, packet *protocol.Publish) {
 	topic, exists := self.items[key]
 
 	if !exists {
-		self.mu.Lock()
 		topic = newTopic()
-		self.items[key] = topic
-		self.mu.Unlock()
+		go func(topic *Topic) {
+			self.mu.Lock()
+			defer self.mu.Unlock()
+			self.items[key] = topic
+		}(topic)
 	}
 
 	topic.Publish(packet)

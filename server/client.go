@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"slices"
@@ -18,29 +19,13 @@ type Client struct {
 	log    *slog.Logger
 	conn   protocol.Connection
 	topics []string
-
-	onClose       func()
-	onPublish     func(event Event[*protocol.Publish])
-	onSubscrube   func(event Event[*protocol.Subscribe])
-	onUnSubscribe func(event Event[*protocol.UnSubscribe])
 }
 
-func NewClient(
-	conn protocol.Connection,
-	onClose func(),
-	onPublish func(event Event[*protocol.Publish]),
-	onSubscrube func(event Event[*protocol.Subscribe]),
-	onUnSubscribe func(event Event[*protocol.UnSubscribe]),
-) *Client {
+func NewClient(conn protocol.Connection) *Client {
 	return &Client{
 		log:    logger.New(conn.ID()),
 		conn:   conn,
 		topics: []string{},
-
-		onClose:       onClose,
-		onPublish:     onPublish,
-		onSubscrube:   onSubscrube,
-		onUnSubscribe: onUnSubscribe,
 	}
 }
 
@@ -52,13 +37,12 @@ func (self *Client) Listen(username string, password string) error {
 	defer func() {
 		self.conn.Close()
 		self.log.Debug("closed...")
-		self.onClose()
-		self.onUnSubscribe(Event[*protocol.UnSubscribe]{
+		unSubscribe <- Event[*protocol.UnSubscribe]{
 			From: self.conn,
 			Packet: &protocol.UnSubscribe{
 				Topics: self.topics,
 			},
-		})
+		}
 	}()
 
 	if err := self.conn.Handshake(username, password); err != nil {
@@ -81,6 +65,8 @@ func (self *Client) Listen(username string, password string) error {
 			return err
 		}
 
+		self.log.Debug(fmt.Sprintf("%s packet read", packet.Code()))
+
 		switch packet := packet.(type) {
 		case *protocol.Ping:
 			err = self.conn.Write(&protocol.PingAck{})
@@ -88,10 +74,10 @@ func (self *Client) Listen(username string, password string) error {
 		case *protocol.Disconnect:
 			return nil
 		case *protocol.Publish:
-			self.onPublish(Event[*protocol.Publish]{
+			publish <- Event[*protocol.Publish]{
 				Packet: packet,
 				From:   self.conn,
-			})
+			}
 
 			if packet.Qos == 1 {
 				err = self.conn.Write(&protocol.PublishAck{ID: packet.ID})
@@ -107,10 +93,10 @@ func (self *Client) Listen(username string, password string) error {
 				}
 			}
 
-			self.onSubscrube(Event[*protocol.Subscribe]{
+			subscribe <- Event[*protocol.Subscribe]{
 				Packet: packet,
 				From:   self.conn,
-			})
+			}
 
 			err = self.conn.Write(&protocol.SubscribeAck{ID: packet.ID})
 			break
@@ -123,10 +109,10 @@ func (self *Client) Listen(username string, password string) error {
 				}
 			}
 
-			self.onUnSubscribe(Event[*protocol.UnSubscribe]{
+			unSubscribe <- Event[*protocol.UnSubscribe]{
 				Packet: packet,
 				From:   self.conn,
-			})
+			}
 
 			err = self.conn.Write(&protocol.UnSubscribeAck{ID: packet.ID})
 			break
