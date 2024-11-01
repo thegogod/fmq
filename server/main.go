@@ -15,9 +15,9 @@ import (
 	"github.com/thegogod/fmq/logger"
 )
 
-var publish = make(chan Event[*protocol.Publish], 1000)
-var subscribe = make(chan Event[*protocol.Subscribe], 1000)
-var unSubscribe = make(chan Event[*protocol.UnSubscribe], 1000)
+var publish = make(chan Event[*protocol.Publish], 100000)
+var subscribe = make(chan Event[*protocol.Subscribe], 100000)
+var unSubscribe = make(chan Event[*protocol.UnSubscribe], 100000)
 
 func main() {
 	log := logger.New("main")
@@ -48,7 +48,7 @@ func main() {
 
 	log.Info(fmt.Sprintf("listening on port %d...", port))
 	topics := newTopics()
-	workers := async.New(50)
+	workers := async.New(500)
 	workers.Start()
 
 	for i := 0; i < workers.Count(); i++ {
