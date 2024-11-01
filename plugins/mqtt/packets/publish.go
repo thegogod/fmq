@@ -21,6 +21,7 @@ type Publish struct {
 func (self Publish) ToProtocol() protocol.Packet {
 	return &protocol.Publish{
 		ID:      self.MessageID,
+		Qos:     self.Header.Qos,
 		Topic:   self.Topic,
 		Payload: self.Payload,
 	}

@@ -4,6 +4,7 @@ import "encoding/json"
 
 type Publish struct {
 	ID      uint16 `json:"id"`
+	Qos     byte   `json:"qos"`
 	Topic   string `json:"topic"`
 	Payload []byte `json:"payload"`
 }

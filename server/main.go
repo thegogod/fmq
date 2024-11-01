@@ -7,46 +7,34 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/thegogod/fmq/async"
 	"github.com/thegogod/fmq/common/env"
 	"github.com/thegogod/fmq/common/protocol"
-	"github.com/thegogod/fmq/common/slices"
 	"github.com/thegogod/fmq/logger"
 )
 
-type Message struct {
-	ID      uint16 `json:"id"`
-	Payload []byte `json:"payload"`
-}
-
-var topics = map[string]chan Message{}
-var tasks = async.New(50)
-var router = NewRouter()
+var publish = make(chan Event[*protocol.Publish])
+var subscribe = make(chan Event[*protocol.Subscribe])
+var unSubscribe = make(chan Event[*protocol.UnSubscribe])
 
 func main() {
-	log := logger.New("")
+	log := logger.New("main")
 	port, err := strconv.Atoi(env.GetOrDefault("FMQ_PORT", "1883"))
 
 	if err != nil {
 		panic(fmt.Errorf("`FMQ_PORT` must be an integer"))
 	}
 
-	plugins := slices.Map(slices.Filter(strings.Split(os.Getenv("FMQ_PLUGINS"), ","), func(name string) bool {
-		_, exists := Plugins[name]
-		return exists
-	}), func(name string) protocol.Plugin {
-		return Plugins[name]
-	})
+	protocolName := strings.ToLower(env.GetOrDefault("FMQ_PROTOCOL", "mqtt"))
+	plugin, exists := Plugins[protocolName]
 
-	protocols := slices.Map(slices.Filter(plugins, func(p protocol.Plugin) bool {
-		_, ok := p.(protocol.Protocol)
-		return ok
-	}), func(p protocol.Plugin) protocol.Protocol {
-		return p.(protocol.Protocol)
-	})
+	if !exists {
+		panic(fmt.Errorf("`FMQ_PROTOCOL` value `%s` is not a valid plugin", protocolName))
+	}
 
-	if len(protocols) == 0 {
-		panic(fmt.Errorf("must enable at least 1 protocol plugin"))
+	proto, ok := plugin.(protocol.Protocol)
+
+	if !ok {
+		panic(fmt.Errorf("`FMQ_PROTOCOL` value `%s` is not a valid protocol", protocolName))
 	}
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -56,7 +44,8 @@ func main() {
 	}
 
 	log.Info(fmt.Sprintf("listening on port %d...", port))
-	tasks.Start()
+	topics := newTopics()
+	clients := map[string]*Client{}
 
 	for {
 		conn, err := listener.Accept()
@@ -65,6 +54,37 @@ func main() {
 			panic(err)
 		}
 
-		go onConnection(protocols, conn)
+		c, err := proto.Connect(conn)
+
+		if err != nil {
+			conn.Close()
+			continue
+		}
+
+		client := NewClient(
+			c,
+			func() {
+				delete(clients, c.ID())
+			},
+			func(event Event[*protocol.Publish]) {
+				topics.Publish(event.Packet.Topic, event.Packet)
+			},
+			func(event Event[*protocol.Subscribe]) {
+				for _, topic := range event.Packet.Topics {
+					topics.Subscribe(topic, c)
+				}
+			},
+			func(event Event[*protocol.UnSubscribe]) {
+				for _, topic := range event.Packet.Topics {
+					topics.UnSubscribe(topic, c.ID())
+				}
+			},
+		)
+
+		clients[client.ID()] = client
+		go client.Listen(
+			os.Getenv("FMQ_USERNAME"),
+			os.Getenv("FMQ_PASSWORD"),
+		)
 	}
 }

@@ -22,6 +22,10 @@ func New(count uint) *Pool {
 	}
 }
 
+func (self *Pool) Count() int {
+	return self.count
+}
+
 func (self *Pool) Start() {
 	self.StartWithContext(context.Background())
 }
