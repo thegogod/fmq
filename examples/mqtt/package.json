@@ -8,7 +8,7 @@
   "scripts": {
     "clean": "npx rimraf ./dist",
     "build": "npx tsup",
-    "start": "node ."
+    "start": "COUNT=200 node ."
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.3",

@@ -1,19 +1,18 @@
-import mqtt from 'mqtt';
 import { faker } from '@faker-js/faker';
 
+import { Client } from './client';
+
 (async () => {
-  const client = mqtt.connect('mqtt://localhost');
+  let topics: string[] = [];
+  const count = +(process.env.COUNT || 20);
 
-  client.on('connect', () => {
-    console.log('connected...');
-    client.subscribe('test');
+  for (let i = 0; i < Math.floor(count / 2); i++) {
+    topics.push(faker.lorem.word());
+  }
 
-    setInterval(() => {
-      client.publish('test', faker.internet.email());
-    }, 10);
-  });
-
-  client.on('message', (topic, payload) => {
-    console.log(topic, payload.toString());
-  });
+  for (let i = 0; i < count; i++) {
+    (async () => {
+      new Client(i, topics, process.env.URL || 'tcp://localhost:1883');
+    })();
+  }
 })();
