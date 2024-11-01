@@ -53,22 +53,24 @@ func (self *Topic) Next() (protocol.Connection, bool) {
 
 func (self *Topic) Subscribe(conn protocol.Connection) {
 	self.mu.RLock()
-	defer self.mu.RUnlock()
-
 	exists := slices.ContainsFunc(self.listeners, func(c protocol.Connection) bool {
 		return c.ID() == conn.ID()
 	})
+
+	self.mu.RUnlock()
 
 	if exists {
 		return
 	}
 
+	self.mu.Lock()
+	defer self.mu.Unlock()
 	self.listeners = append(self.listeners, conn)
 }
 
 func (self *Topic) UnSubscribe(id string) {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
+	self.mu.Lock()
+	defer self.mu.Unlock()
 
 	i := slices.IndexFunc(self.listeners, func(c protocol.Connection) bool {
 		return c.ID() == id
