@@ -48,7 +48,7 @@ func main() {
 
 	log.Info(fmt.Sprintf("listening on port %d...", port))
 	topics := newTopics()
-	workers := async.New(20)
+	workers := async.New(50)
 	workers.Start()
 
 	for i := 0; i < workers.Count(); i++ {
@@ -81,8 +81,6 @@ func listen(_ *slog.Logger, topics *Topics) func() error {
 	return func() error {
 		for {
 			select {
-			case event := <-publish:
-				topics.Publish(event.Packet.Topic, event.Packet)
 			case event := <-subscribe:
 				for _, topic := range event.Packet.Topics {
 					topics.Subscribe(topic, event.From)
@@ -91,6 +89,8 @@ func listen(_ *slog.Logger, topics *Topics) func() error {
 				for _, topic := range event.Packet.Topics {
 					topics.UnSubscribe(topic, event.From.ID())
 				}
+			case event := <-publish:
+				topics.Publish(event.Packet.Topic, event.Packet)
 			default:
 				time.Sleep(100 * time.Millisecond)
 			}

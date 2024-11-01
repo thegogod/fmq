@@ -51,8 +51,8 @@ func (self *Topic) Next() (protocol.Connection, bool) {
 }
 
 func (self *Topic) Subscribe(conn protocol.Connection) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+	self.mu.RLock()
+	defer self.mu.RUnlock()
 
 	exists := slices.ContainsFunc(self.listeners, func(c protocol.Connection) bool {
 		return c.ID() == conn.ID()
@@ -66,8 +66,8 @@ func (self *Topic) Subscribe(conn protocol.Connection) {
 }
 
 func (self *Topic) UnSubscribe(id string) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+	self.mu.RLock()
+	defer self.mu.RUnlock()
 
 	i := slices.IndexFunc(self.listeners, func(c protocol.Connection) bool {
 		return c.ID() == id
