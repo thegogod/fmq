@@ -1,6 +1,7 @@
-package main
+package storage
 
 import (
+	"encoding/json"
 	"slices"
 	"sync"
 	"time"
@@ -15,7 +16,7 @@ type Topic struct {
 	listeners []protocol.Connection
 }
 
-func newTopic() *Topic {
+func NewTopic() *Topic {
 	self := &Topic{
 		index:     -1,
 		queue:     make(Queue[*protocol.Publish], 10000),
@@ -86,6 +87,13 @@ func (self *Topic) UnSubscribe(id string) {
 
 func (self *Topic) Publish(packet *protocol.Publish) {
 	self.queue.Push(packet)
+}
+
+func (self *Topic) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{
+		"messages":  len(self.queue),
+		"listeners": self.Count(),
+	})
 }
 
 func (self *Topic) listen() {

@@ -4,15 +4,20 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 	"github.com/thegogod/fmq/async"
 	"github.com/thegogod/fmq/common/env"
 	"github.com/thegogod/fmq/common/protocol"
 	"github.com/thegogod/fmq/logger"
+	"github.com/thegogod/fmq/server/routes"
+	"github.com/thegogod/fmq/server/storage"
 )
 
 var publish = make(chan Event[*protocol.Publish], 100000)
@@ -47,7 +52,9 @@ func main() {
 	}
 
 	log.Info(fmt.Sprintf("listening on port %d...", port))
-	topics := newTopics()
+	topics := storage.New()
+
+	go api(topics)
 	workers := async.New(500)
 	workers.Start()
 
@@ -77,7 +84,7 @@ func main() {
 	}
 }
 
-func listen(_ *slog.Logger, topics *Topics) func() error {
+func listen(_ *slog.Logger, topics *storage.Topics) func() error {
 	return func() error {
 		for {
 			select {
@@ -95,5 +102,15 @@ func listen(_ *slog.Logger, topics *Topics) func() error {
 				time.Sleep(100 * time.Millisecond)
 			}
 		}
+	}
+}
+
+func api(topics *storage.Topics) {
+	r := chi.NewRouter()
+	r.Use(render.SetContentType(render.ContentTypeJSON))
+	r.Mount("/v1", routes.Router(topics))
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", env.GetOrDefault("PORT", "3000")), r); err != nil {
+		panic(err)
 	}
 }
