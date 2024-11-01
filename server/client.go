@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"log/slog"
+	"slices"
 
 	"github.com/thegogod/fmq/common/protocol"
 	"github.com/thegogod/fmq/logger"
@@ -14,8 +15,9 @@ type Event[T protocol.Packet] struct {
 }
 
 type Client struct {
-	log  *slog.Logger
-	conn protocol.Connection
+	log    *slog.Logger
+	conn   protocol.Connection
+	topics []string
 
 	onClose       func()
 	onPublish     func(event Event[*protocol.Publish])
@@ -31,8 +33,9 @@ func NewClient(
 	onUnSubscribe func(event Event[*protocol.UnSubscribe]),
 ) *Client {
 	return &Client{
-		log:  logger.New(conn.ID()),
-		conn: conn,
+		log:    logger.New(conn.ID()),
+		conn:   conn,
+		topics: []string{},
 
 		onClose:       onClose,
 		onPublish:     onPublish,
@@ -50,6 +53,12 @@ func (self *Client) Listen(username string, password string) error {
 		self.conn.Close()
 		self.log.Debug("closed...")
 		self.onClose()
+		self.onUnSubscribe(Event[*protocol.UnSubscribe]{
+			From: self.conn,
+			Packet: &protocol.UnSubscribe{
+				Topics: self.topics,
+			},
+		})
 	}()
 
 	if err := self.conn.Handshake(username, password); err != nil {
@@ -90,6 +99,14 @@ func (self *Client) Listen(username string, password string) error {
 
 			break
 		case *protocol.Subscribe:
+			for _, topic := range packet.Topics {
+				exists := slices.Contains(self.topics, topic)
+
+				if !exists {
+					self.topics = append(self.topics, topic)
+				}
+			}
+
 			self.onSubscrube(Event[*protocol.Subscribe]{
 				Packet: packet,
 				From:   self.conn,
@@ -98,6 +115,14 @@ func (self *Client) Listen(username string, password string) error {
 			err = self.conn.Write(&protocol.SubscribeAck{ID: packet.ID})
 			break
 		case *protocol.UnSubscribe:
+			for _, topic := range packet.Topics {
+				i := slices.Index(self.topics, topic)
+
+				if i > -1 {
+					self.topics = append(self.topics[:i], self.topics[i+1:]...)
+				}
+			}
+
 			self.onUnSubscribe(Event[*protocol.UnSubscribe]{
 				Packet: packet,
 				From:   self.conn,

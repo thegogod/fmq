@@ -49,13 +49,15 @@ func (self *Topics) UnSubscribe(key string, id string) {
 }
 
 func (self *Topics) Publish(key string, packet *protocol.Publish) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+	self.mu.RLock()
+	defer self.mu.RUnlock()
 	topic, exists := self.items[key]
 
 	if !exists {
+		self.mu.Lock()
 		topic = newTopic()
 		self.items[key] = topic
+		self.mu.Unlock()
 	}
 
 	topic.Publish(packet)

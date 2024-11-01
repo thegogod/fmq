@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 
   client.on('connect', () => {
     console.log('connected...');
-    // client.subscribe('test');
+    client.subscribe('test');
 
     setInterval(() => {
       client.publish('test', faker.internet.email());

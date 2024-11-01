@@ -44,9 +44,9 @@ func (self *Topic) Next() (protocol.Connection, bool) {
 
 	if i > (len(self.listeners) - 1) {
 		i = 0
-		self.index = i
 	}
 
+	self.index = i
 	return self.listeners[i], true
 }
 
@@ -96,7 +96,6 @@ func (self *Topic) listen() {
 
 			if !exists {
 				self.Publish(packet)
-				time.Sleep(100 * time.Millisecond)
 				break
 			}
 
