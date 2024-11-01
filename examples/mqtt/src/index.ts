@@ -10,9 +10,34 @@ import { Client } from './client';
     topics.push(faker.lorem.word());
   }
 
-  for (let i = 0; i < count; i++) {
-    (async () => {
-      new Client(i, topics, process.env.URL || 'tcp://localhost:1883');
-    })();
+  let produced = 0;
+  let consumed = 0;
+
+  async function start(i: number) {
+    const client = new Client(i, topics, process.env.URL || 'tcp://localhost:1883');
+
+    client.onProduce(() => {
+      produced++;
+    });
+
+    client.onConsume(() => {
+      consumed++;
+    });
   }
+
+  const clients: Promise<void>[] = [];
+
+  for (let i = 0; i < count; i++) {
+    clients.push(start(i));
+  }
+
+  setInterval(() => {
+    console.info(`produced: ${produced}/sec`);
+    console.info(`consumed: ${consumed}/sec`);
+
+    produced = 0;
+    consumed = 0;
+  }, 1000);
+
+  await Promise.all(clients);
 })();

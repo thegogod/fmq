@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"slices"
@@ -64,8 +63,6 @@ func (self *Client) Listen(username string, password string) error {
 			self.log.Error(err.Error())
 			return err
 		}
-
-		self.log.Debug(fmt.Sprintf("%s packet read", packet.Code()))
 
 		switch packet := packet.(type) {
 		case *protocol.Ping:

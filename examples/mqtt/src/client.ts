@@ -2,16 +2,17 @@ import mqtt from 'mqtt';
 import { faker } from '@faker-js/faker';
 
 export class Client {
-  private readonly _i: number;
   private readonly _topics: string[] = [];
   private readonly _client: mqtt.MqttClient;
 
+  private _onProduce = () => {};
+  private _onConsume = () => {};
+
   constructor(i: number, topics: string[], url: string) {
-    this._i = i;
     this._topics = topics;
     this._client = mqtt.connect(url, { clientId: `client/${i}` });
     this._client.on('connect', this._onConnect.bind(this));
-    this._client.on('message', this._onMessage.bind(this));
+    this._client.on('message', this._onConsume);
   }
 
   private _onConnect() {
@@ -27,11 +28,19 @@ export class Client {
 
     setInterval(() => {
       const topic = topics[Math.floor(Math.random() * topics.length)];
-      this._client.publish(topic, faker.internet.email());
+      this._client.publish(topic, faker.internet.email(), (err) => {
+        if (err) console.error(err);
+        this._onProduce();
+      });
     }, 10);
   }
 
-  private _onMessage(topic: string, payload: Buffer) {
-    console.log(`client/${this._i}/${topic}`, payload.toString());
+  onProduce(callback: () => void) {
+    this._onProduce = callback;
+  }
+
+  onConsume(callback: () => void) {
+    this._onConsume = callback;
+    this._client.on('message', callback);
   }
 }
