@@ -1,0 +1,9 @@
+datasources:
+  - org_id: 1
+    version: 1
+    type: prometheus
+    name: prometheus
+    access: proxy
+    url: http://host.docker.internal:9090
+    editable: false
+    is_default: true
