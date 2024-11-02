@@ -1,0 +1,8 @@
+name: fmq
+
+services:
+  server:
+    build: .
+    ports:
+      - 1883:1883
+      - 8080:8080
