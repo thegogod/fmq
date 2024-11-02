@@ -7,6 +7,8 @@ services:
     ports:
       - 1883:1883
       - 8080:8080
+    networks:
+      - default
 
   prometheus:
     image: prom/prometheus
@@ -19,6 +21,8 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus
       - prometheus:/prometheus
+    networks:
+      - default
 
   grafana:
     image: grafana/grafana
@@ -31,6 +35,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./grafana:/etc/grafana/provisioning/datasources
+    networks:
+      - default
+
 volumes:
   grafana: {}
   prometheus: {}
+
+networks:
+  default:
+    driver: bridge
