@@ -15,6 +15,7 @@ EXPOSE 1883
 EXPOSE 8080
 
 ENV LOG_PREFIX=fmq/server
+ENV LOG_LEVEL=warn
 ENV PORT=8080
 
 # Command to run when the container starts
