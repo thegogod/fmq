@@ -1,0 +1,55 @@
+<div class="flex flex-col shadow-md bg-slate-900 py-3 transition border-r dark:border-gray-700">
+  <div class="flex flex-col flex-1">
+    <button
+      class="mx-auto mb-3"
+      [class.text-2xl]="expanded$ | async"
+      [class.p-3]="expanded$ | async"
+    >
+      <app-avatar name="DEV"></app-avatar>
+    </button>
+
+    <a
+      class="app-root--route"
+      *ngFor="let route of routes"
+      [routerLink]="route.path"
+      routerLinkActive="active"
+      [appTooltip]="route.name"
+      [appTooltipDisabled]="(expanded$ | async) || false"
+      appTooltipPosition="right"
+    >
+      <app-icon [name]="route.icon"></app-icon>
+      <span *ngIf="expanded$ | async">{{ route.name }}</span>
+    </a>
+  </div>
+
+  <div class="flex flex-col">
+    <button
+      *ngIf="isDev"
+      class="app-root--route"
+      appTooltip="Dev Tools"
+      [appTooltipDisabled]="(expanded$ | async) || false"
+      appTooltipPosition="right"
+      (click)="openDevtools()"
+    >
+      <app-icon name="terminal"></app-icon>
+      <span *ngIf="expanded$ | async">Dev Tools</span>
+    </button>
+
+    <hr class="h-px mb-3 bg-gray-200 border-0 dark:bg-gray-700" />
+
+    <button
+      class="app-root--route justify-end"
+      (click)="toggleExpanded()"
+    >
+      <app-icon
+        class="transition"
+        name="chevrons-right"
+        [class.rotate-180]="expanded$ | async"
+      ></app-icon>
+    </button>
+  </div>
+</div>
+
+<div class="flex flex-1 overflow-x-hidden">
+  <router-outlet></router-outlet>
+</div>

@@ -1,0 +1,8 @@
+.app-toasts {
+  display: flex;
+  flex-direction: column;
+  max-width: 300px;
+
+  @apply text-ellipsis;
+  @apply overflow-hidden;
+}

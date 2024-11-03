@@ -1,0 +1,12 @@
+.app-popover {
+  display: flex;
+
+  @apply text-black;
+  @apply bg-white;
+  @apply border;
+  @apply dark:text-white;
+  @apply dark:bg-slate-900;
+  @apply dark:border-gray-700;
+  @apply p-2;
+  @apply rounded-lg;
+}

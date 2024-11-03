@@ -1,0 +1,17 @@
+<div class="flex px-4 py-4 text-ellipsis overflow-hidden">
+  <app-icon
+    class="!mr-2"
+    [name]="icon"
+  ></app-icon>
+
+  <div class="my-auto text-ellipsis overflow-hidden">
+    {{ value.message }}
+  </div>
+</div>
+
+<div *ngIf="value.timeout" class="bg-gray-200 h-1 dark:bg-gray-700">
+  <div
+    class="bg-blue-600 h-1 dark:bg-blue-500"
+    [style.width.%]="progress$ | async"
+  ></div>
+</div>

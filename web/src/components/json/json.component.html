@@ -1,0 +1,13 @@
+<ng-container *ngIf="type === 'object'">
+  <app-json-object
+    [value]="value"
+    (copy)="copy.emit()"
+  ></app-json-object>
+</ng-container>
+
+<ng-container *ngIf="type === 'string'">
+  <app-json-string
+    [value]="value"
+    (copy)="copy.emit()"
+  ></app-json-string>
+</ng-container>

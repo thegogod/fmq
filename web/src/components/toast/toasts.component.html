@@ -1,0 +1,5 @@
+<app-toast
+  *ngFor="let toast of toasts.$stack | async"
+  [value]="toast"
+  (dismiss)="toasts.dismiss(toast.id)"
+></app-toast>

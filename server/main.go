@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thegogod/fmq/async"
@@ -108,9 +109,13 @@ func listen(_ *slog.Logger, topics *storage.Topics) func() error {
 
 func api(topics *storage.Topics) {
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Handle("/metrics", promhttp.Handler())
 	r.Mount("/v1", routes.Router(topics))
+
+	fs := http.FileServer(http.Dir("../web/dist/web/browser"))
+	r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", env.GetOrDefault("PORT", "3000")), r); err != nil {
 		panic(err)

@@ -1,0 +1,13 @@
+.app-avatar {
+  display: flex;
+
+  @apply rounded-lg;
+  @apply py-2;
+  @apply px-2.5;
+  @apply truncate;
+  @apply dark:bg-blue-600;
+  @apply dark:ring-blue-900;
+  @apply ring;
+  @apply ring-inset;
+  @apply transition;
+}

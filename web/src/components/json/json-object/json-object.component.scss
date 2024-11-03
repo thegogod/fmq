@@ -1,0 +1,8 @@
+.app-json-object {
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
+
+  @apply truncate;
+  @apply overflow-y-auto;
+}

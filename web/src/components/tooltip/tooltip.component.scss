@@ -1,0 +1,10 @@
+.app-tooltip {
+  display: flex;
+  background-color: #000;
+
+  @apply border;
+  @apply dark:border-gray-700;
+  @apply dark:text-white;
+  @apply p-2;
+  @apply rounded-lg;
+}

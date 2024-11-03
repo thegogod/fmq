@@ -1,0 +1,38 @@
+<div
+  *ngFor="let key of keys"
+  class="flex flex-col"
+>
+  <button
+    class="flex"
+    [disabled]="!isObject(key)"
+    (click)="toggle(key)"
+  >
+    <div
+      *ngIf="isObject(key)"
+      class="mr-2 transition"
+      [class.-rotate-90]="!((expanded$ | async) || { })[key]"
+    >
+      &#9660;
+    </div>
+
+    <div
+      class="mr-2"
+      [class.ml-5]="!isObject(key)"
+    >
+      {{ key }}:
+    </div>
+
+    <app-json-string
+      class="truncate opacity-50 italic hover:underline"
+      [value]="value[key] | json"
+      (copy)="copy.emit()"
+    ></app-json-string>
+  </button>
+
+  <app-json
+    *ngIf="((expanded$ | async) || { })[key]"
+    class="ml-7"
+    [value]="value[key]"
+    (copy)="copy.emit()"
+  ></app-json>
+</div>

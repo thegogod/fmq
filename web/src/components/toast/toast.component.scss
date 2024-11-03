@@ -1,0 +1,44 @@
+.app-toast {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  @apply shadow-lg;
+  @apply bg-slate-50;
+  @apply rounded;
+  @apply text-ellipsis;
+  @apply overflow-hidden;
+
+  &.info {
+    .app-icon {
+      @apply text-sky-500;
+    }
+  }
+
+  &.warn {
+    .app-icon {
+      @apply text-yellow-500;
+    }
+  }
+
+  &.success {
+    .app-icon {
+      @apply text-emerald-500;
+    }
+  }
+
+  &.error {
+    .app-icon {
+      @apply text-red-500;
+    }
+  }
+
+  &:not(:last-child) {
+    @apply mb-2;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    @apply text-white;
+    @apply bg-slate-700;
+  }
+}
