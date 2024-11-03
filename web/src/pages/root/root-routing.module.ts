@@ -9,8 +9,8 @@ import { RootGuard } from './root.guard';
 const routes: Routes = [
   {
     path: '',
-    canActivate: [PrivateGuard],
-    canActivateChild: [PrivateGuard],
+    canActivate: [PrivateGuard, RootGuard],
+    canActivateChild: [PrivateGuard, RootGuard],
     component: RootComponent,
     children: [
       {
