@@ -19,6 +19,7 @@ import (
 	"github.com/thegogod/fmq/common/env"
 	"github.com/thegogod/fmq/common/protocol"
 	"github.com/thegogod/fmq/logger"
+	"github.com/thegogod/fmq/server/admin"
 	"github.com/thegogod/fmq/server/routes"
 	"github.com/thegogod/fmq/server/storage"
 )
@@ -115,9 +116,7 @@ func api(topics *storage.Topics) {
 	r.Use(cors.AllowAll().Handler)
 	r.Handle("/metrics", promhttp.Handler())
 	r.Mount("/v1", routes.Router(topics))
-
-	fs := http.FileServer(http.Dir("../web/dist/web/browser"))
-	r.Handle("/admin/*", http.StripPrefix("/admin/", fs))
+	r.Mount("/admin", admin.Router())
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", env.GetOrDefault("PORT", "3000")), r); err != nil {
 		panic(err)

@@ -10,6 +10,6 @@ import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@
 })
 export class DashboardComponent implements OnInit {
   ngOnInit() {
-    document.title = 'FMQ | Dashboard';
+    document.title = 'FMQ Admin | Dashboard';
   }
 }
