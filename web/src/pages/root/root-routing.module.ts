@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthModule, PrivateGuard } from '../../auth';
 
 import { RootComponent } from './root.component';
+import { RootGuard } from './root.guard';
 
 const routes: Routes = [
   {
@@ -31,6 +32,6 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule, AuthModule],
-  providers: []
+  providers: [RootGuard]
 })
 export class RootRoutingModule { }
